@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
+import { supabase } from "./supabaseClient.js";
 
 /* ------------------------------------------------------------------ */
 /* Money Ledger — daily logging of money sent, received, and fees      */
 /* ------------------------------------------------------------------ */
 
-const STORE_KEY = "moneyledger:v1";
+const settingsKey = (uid) => `moneyledger:settings:v1:${uid}`;
 
 const OUT_PURPOSES = [
   "Rent", "Food & shopping", "Transport", "Airtime & data", "Utility bills",
@@ -54,39 +55,44 @@ function refCode() {
 }
 
 /* ------------------------------ app -------------------------------- */
-export default function MoneyLedger() {
-  const [loaded, setLoaded] = useState(false);
+export default function MoneyLedger({ user, onSignOut }) {
   const [txs, setTxs] = useState([]);
   const [settings, setSettings] = useState({ currency: "KES", reminderTime: "20:00" });
   const [tab, setTab] = useState("log");
   const [toast, setToast] = useState("");
   const firstSave = useRef(true);
 
-  /* load */
+  /* load settings — kept per-device/per-account in localStorage */
   useEffect(() => {
     try {
-      const raw = window.localStorage.getItem(STORE_KEY);
-      const data = raw ? JSON.parse(raw) : null;
-      if (data) {
-        setTxs(data.txs || []);
-        setSettings((s) => ({ ...s, ...(data.settings || {}) }));
-      }
-    } catch (e) {
-      /* first run — nothing stored yet */
-    }
-    setLoaded(true);
-  }, []);
+      const raw = window.localStorage.getItem(settingsKey(user.id));
+      if (raw) setSettings((s) => ({ ...s, ...JSON.parse(raw) }));
+    } catch (e) { /* first run — nothing stored yet */ }
+  }, [user.id]);
 
-  /* save */
+  /* save settings */
   useEffect(() => {
-    if (!loaded) return;
     if (firstSave.current) { firstSave.current = false; return; }
     try {
-      window.localStorage.setItem(STORE_KEY, JSON.stringify({ txs, settings }));
+      window.localStorage.setItem(settingsKey(user.id), JSON.stringify(settings));
     } catch (e) {
-      setToast("Couldn't save. Try again.");
+      setToast("Couldn't save settings. Try again.");
     }
-  }, [txs, settings, loaded]);
+  }, [settings, user.id]);
+
+  /* load transactions from Supabase, scoped to the signed-in account */
+  useEffect(() => {
+    (async () => {
+      const { data, error } = await supabase
+        .from("transactions")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("date", { ascending: false })
+        .order("created_at", { ascending: false });
+      if (error) setToast("Couldn't load your data.");
+      else setTxs(data || []);
+    })();
+  }, [user.id]);
 
   const cur = settings.currency;
   const fmt = (n) =>
@@ -94,8 +100,22 @@ export default function MoneyLedger() {
 
   const flash = (m) => { setToast(m); setTimeout(() => setToast(""), 2200); };
 
-  const addTx = (t) => { setTxs((p) => [{ ...t, id: Date.now(), ref: refCode() }, ...p]); flash(t.type === "in" ? "Money in — logged." : "Money out — logged."); };
-  const delTx = (id) => setTxs((p) => p.filter((t) => t.id !== id));
+  const addTx = async (t) => {
+    const { data, error } = await supabase
+      .from("transactions")
+      .insert({ ...t, user_id: user.id, ref: refCode() })
+      .select()
+      .single();
+    if (error) { flash("Couldn't save. Try again."); return; }
+    setTxs((p) => [data, ...p]);
+    flash(t.type === "in" ? "Money in — logged." : "Money out — logged.");
+  };
+
+  const delTx = async (id) => {
+    setTxs((p) => p.filter((t) => t.id !== id));
+    const { error } = await supabase.from("transactions").delete().eq("id", id);
+    if (error) flash("Couldn't delete. Try again.");
+  };
 
   const loggedToday = txs.some((t) => t.date === todayISO());
   const lastDate = txs.length ? txs.map((t) => t.date).sort().slice(-1)[0] : null;
@@ -220,13 +240,21 @@ export default function MoneyLedger() {
             <h1 className="disp">Money Ledger</h1>
             <div className="sub">Sent · Received · Fees</div>
           </div>
-          <select
-            className="cursel"
-            value={settings.currency}
-            onChange={(e) => setSettings((s) => ({ ...s, currency: e.target.value }))}
-          >
-            {CURRENCIES.map((c) => <option key={c}>{c}</option>)}
-          </select>
+          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+            <span style={{ fontSize: 12, color: "#8FA6B2" }}>
+              {user.user_metadata?.full_name || user.email}
+            </span>
+            <select
+              className="cursel"
+              value={settings.currency}
+              onChange={(e) => setSettings((s) => ({ ...s, currency: e.target.value }))}
+            >
+              {CURRENCIES.map((c) => <option key={c}>{c}</option>)}
+            </select>
+            <button className="cursel" style={{ cursor: "pointer" }} onClick={onSignOut}>
+              Sign out
+            </button>
+          </div>
         </div>
       </header>
 
@@ -557,7 +585,7 @@ function History({ txs, fmt, onDelete, cur }) {
       const s = (t.party + " " + t.tag + " " + (t.note || "")).toLowerCase();
       return s.includes(q.toLowerCase());
     })
-    .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.id - a.id));
+    .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : (b.created_at || "").localeCompare(a.created_at || "")));
 
   const exportCSV = () => {
     const head = ["Date", "Type", "Party", "Purpose/Source", `Amount (${cur})`, `Transaction cost (${cur})`, "Note", "Ref"];
