@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { supabase } from "./supabaseClient.js";
 
 export default function Auth() {
-  const [mode, setMode] = useState("login"); // "login" | "signup"
+  const [mode, setMode] = useState("login"); // "login" | "signup" | "forgot"
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -11,6 +11,9 @@ export default function Auth() {
   const [busy, setBusy] = useState(false);
 
   const isSignup = mode === "signup";
+  const isForgot = mode === "forgot";
+
+  const switchTo = (next) => { setMode(next); setError(""); setNotice(""); };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -26,6 +29,13 @@ export default function Auth() {
         });
         if (err) throw err;
         setNotice("Account created. Check your email to confirm, then log in.");
+        setMode("login");
+      } else if (isForgot) {
+        const { error: err } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+          redirectTo: window.location.origin,
+        });
+        if (err) throw err;
+        setNotice("Check your email for a password reset link.");
         setMode("login");
       } else {
         const { error: err } = await supabase.auth.signInWithPassword({
@@ -75,6 +85,7 @@ export default function Auth() {
         .save:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
         .switch{text-align:center;margin-top:16px;font-size:13px;color:var(--muted)}
         .switch button{border:0;background:transparent;color:var(--in);font-weight:600;cursor:pointer;padding:0;text-decoration:underline}
+        .link-sm{border:0;background:transparent;color:var(--muted);font-size:11px;cursor:pointer;padding:0;text-decoration:underline}
         .msg{border-radius:8px;padding:10px 12px;font-size:12.5px;margin-bottom:14px}
         .msg.err{background:var(--out-soft);color:var(--out)}
         .msg.ok{background:#E3F1EC;color:#0E7C66}
@@ -103,7 +114,7 @@ export default function Auth() {
           <path d="M66 80 q14 -10 28 0" fill="none" stroke="#C99873" strokeWidth="2.5" strokeLinecap="round" />
         </svg>
         <h1>Money Ledger</h1>
-        <div className="sub">{isSignup ? "Create your account" : "Log in"}</div>
+        <div className="sub">{isSignup ? "Create your account" : isForgot ? "Reset your password" : "Log in"}</div>
 
         {error && <div className="msg err">{error}</div>}
         {notice && <div className="msg ok">{notice}</div>}
@@ -119,20 +130,29 @@ export default function Auth() {
             <label className="f">Email</label>
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="you@example.com" />
           </div>
-          <div className="field">
-            <label className="f">Password</label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} placeholder="At least 6 characters" />
-          </div>
+          {!isForgot && (
+            <div className="field">
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                <label className="f" style={{ margin: 0 }}>Password</label>
+                {!isSignup && (
+                  <button type="button" className="link-sm" onClick={() => switchTo("forgot")}>Forgot password?</button>
+                )}
+              </div>
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} placeholder="At least 6 characters" style={{ marginTop: 6 }} />
+            </div>
+          )}
           <button className="save" type="submit" disabled={busy}>
-            {busy ? "Please wait…" : isSignup ? "Create account" : "Log in"}
+            {busy ? "Please wait…" : isSignup ? "Create account" : isForgot ? "Send reset link" : "Log in"}
           </button>
         </form>
 
         <div className="switch">
           {isSignup ? (
-            <>Already have an account? <button onClick={() => { setMode("login"); setError(""); setNotice(""); }}>Log in</button></>
+            <>Already have an account? <button onClick={() => switchTo("login")}>Log in</button></>
+          ) : isForgot ? (
+            <>Remembered it? <button onClick={() => switchTo("login")}>Log in</button></>
           ) : (
-            <>New here? <button onClick={() => { setMode("signup"); setError(""); setNotice(""); }}>Create an account</button></>
+            <>New here? <button onClick={() => switchTo("signup")}>Create an account</button></>
           )}
         </div>
       </div>
