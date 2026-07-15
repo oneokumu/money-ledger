@@ -47,26 +47,42 @@ export default function Auth() {
         @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600;700&display=swap');
         .ml-root{
           --ink:#11212E; --ink-2:#1D3446; --paper:#F4F5F2; --card:#FFFFFF;
-          --line:#DCDFD9; --muted:#6B7B85; --out:#B0413E; --out-soft:#F7E7E4;
-          background:var(--paper); color:var(--ink); font-family:'Inter',system-ui,sans-serif;
+          --line:#DCDFD9; --muted:#6B7B85;
+          --in:#0E7C66; --out:#B0413E; --out-soft:#F7E7E4; --fee:#B07C1E;
+          color:var(--ink); font-family:'Inter',system-ui,sans-serif;
+          background:
+            radial-gradient(600px circle at 12% 8%, #cdeee2 0%, transparent 55%),
+            radial-gradient(560px circle at 90% 12%, #fbe3c9 0%, transparent 55%),
+            radial-gradient(700px circle at 80% 92%, #f6d4cd 0%, transparent 55%),
+            radial-gradient(600px circle at 8% 92%, #d3e6f2 0%, transparent 55%),
+            var(--paper);
         }
         .ml-root *{box-sizing:border-box}
-        .auth-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:28px;width:100%;max-width:360px}
-        .auth-card h1{font-family:'Bricolage Grotesque','Inter',sans-serif;font-weight:800;font-size:24px;margin:0 0 4px;letter-spacing:-.02em}
+        .auth-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:28px;width:100%;max-width:360px;box-shadow:0 20px 50px -25px rgba(17,33,46,.35);position:relative;overflow:hidden}
+        .auth-card:before{content:"";position:absolute;left:0;top:0;right:0;height:5px;background:linear-gradient(90deg,var(--in),var(--fee),var(--out))}
+        .mark{display:flex;gap:5px;margin-bottom:14px}
+        .mark i{width:9px;height:9px;border-radius:99px;display:block}
+        .mark i:nth-child(1){background:var(--in)} .mark i:nth-child(2){background:var(--fee)} .mark i:nth-child(3){background:var(--out)}
+        .auth-card h1{
+          font-family:'Bricolage Grotesque','Inter',sans-serif;font-weight:800;font-size:26px;margin:0 0 4px;letter-spacing:-.02em;
+          background:linear-gradient(90deg,var(--ink) 30%,var(--in) 65%,var(--fee) 100%);
+          -webkit-background-clip:text;background-clip:text;color:transparent;
+        }
         .auth-card .sub{font-size:12px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:22px}
         label.f{display:block;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
         .field{margin-bottom:14px}
         input{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;font:400 14px 'Inter';color:var(--ink)}
-        input:focus{outline:2px solid var(--ink);outline-offset:1px}
-        .save{width:100%;border:0;border-radius:9px;padding:13px;font:700 14px 'Inter';color:#fff;cursor:pointer;background:var(--ink);margin-top:6px}
-        .save:disabled{opacity:.5;cursor:not-allowed}
+        input:focus{outline:2px solid var(--in);outline-offset:1px}
+        .save{width:100%;border:0;border-radius:9px;padding:13px;font:700 14px 'Inter';color:#fff;cursor:pointer;margin-top:6px;background:linear-gradient(90deg,var(--ink),var(--ink-2) 60%,var(--in));box-shadow:0 8px 18px -8px rgba(14,124,102,.55)}
+        .save:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
         .switch{text-align:center;margin-top:16px;font-size:13px;color:var(--muted)}
-        .switch button{border:0;background:transparent;color:var(--ink);font-weight:600;cursor:pointer;padding:0;text-decoration:underline}
+        .switch button{border:0;background:transparent;color:var(--in);font-weight:600;cursor:pointer;padding:0;text-decoration:underline}
         .msg{border-radius:8px;padding:10px 12px;font-size:12.5px;margin-bottom:14px}
         .msg.err{background:var(--out-soft);color:var(--out)}
         .msg.ok{background:#E3F1EC;color:#0E7C66}
       `}</style>
       <div className="auth-card">
+        <div className="mark"><i /><i /><i /></div>
         <h1>Money Ledger</h1>
         <div className="sub">{isSignup ? "Create your account" : "Log in"}</div>
 
