@@ -51,18 +51,16 @@ export default function Auth() {
           --in:#0E7C66; --out:#B0413E; --out-soft:#F7E7E4; --fee:#B07C1E;
           color:var(--ink); font-family:'Inter',system-ui,sans-serif;
           background:
-            radial-gradient(600px circle at 12% 8%, #cdeee2 0%, transparent 55%),
-            radial-gradient(560px circle at 90% 12%, #fbe3c9 0%, transparent 55%),
-            radial-gradient(700px circle at 80% 92%, #f6d4cd 0%, transparent 55%),
-            radial-gradient(600px circle at 8% 92%, #d3e6f2 0%, transparent 55%),
+            radial-gradient(1100px 900px at 8% 0%, #d9f0e4 0%, rgba(217,240,228,.45) 40%, transparent 80%),
+            radial-gradient(1100px 900px at 100% 15%, #fbe6cd 0%, rgba(251,230,205,.45) 40%, transparent 80%),
+            radial-gradient(1100px 900px at 88% 100%, #f6d9d2 0%, rgba(246,217,210,.45) 40%, transparent 80%),
+            radial-gradient(1100px 900px at 0% 100%, #d7e8f2 0%, rgba(215,232,242,.45) 40%, transparent 80%),
             var(--paper);
         }
         .ml-root *{box-sizing:border-box}
         .auth-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:28px;width:100%;max-width:360px;box-shadow:0 20px 50px -25px rgba(17,33,46,.35);position:relative;overflow:hidden}
         .auth-card:before{content:"";position:absolute;left:0;top:0;right:0;height:5px;background:linear-gradient(90deg,var(--in),var(--fee),var(--out))}
-        .mark{display:flex;gap:5px;margin-bottom:14px}
-        .mark i{width:9px;height:9px;border-radius:99px;display:block}
-        .mark i:nth-child(1){background:var(--in)} .mark i:nth-child(2){background:var(--fee)} .mark i:nth-child(3){background:var(--out)}
+        .mark{margin-bottom:14px}
         .auth-card h1{
           font-family:'Bricolage Grotesque','Inter',sans-serif;font-weight:800;font-size:26px;margin:0 0 4px;letter-spacing:-.02em;
           background:linear-gradient(90deg,var(--ink) 30%,var(--in) 65%,var(--fee) 100%);
@@ -82,7 +80,28 @@ export default function Auth() {
         .msg.ok{background:#E3F1EC;color:#0E7C66}
       `}</style>
       <div className="auth-card">
-        <div className="mark"><i /><i /><i /></div>
+        <svg className="mark" width="84" height="68" viewBox="0 0 160 130">
+          <defs>
+            <filter id="markBlur" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="10" />
+            </filter>
+            <radialGradient id="markGrad" cx="35%" cy="30%" r="75%">
+              <stop offset="0%" stopColor="var(--fee)" />
+              <stop offset="50%" stopColor="var(--in)" />
+              <stop offset="100%" stopColor="var(--out)" />
+            </radialGradient>
+          </defs>
+
+          <ellipse cx="80" cy="60" rx="72" ry="58" fill="url(#markGrad)" opacity="0.4" filter="url(#markBlur)" />
+          <ellipse cx="34" cy="24" rx="20" ry="13" fill="var(--fee)" opacity="0.5" filter="url(#markBlur)" transform="rotate(-18 34 24)" />
+          <ellipse cx="128" cy="26" rx="20" ry="13" fill="var(--out)" opacity="0.45" filter="url(#markBlur)" transform="rotate(15 128 26)" />
+
+          <path d="M14 118 C36 78 58 76 76 82 L92 88 C100 91 106 88 108 82" fill="none" stroke="var(--ink-2)" strokeWidth="20" strokeLinecap="round" />
+          <path d="M146 118 C124 78 102 76 84 82 L68 88 C60 91 54 88 52 82" fill="none" stroke="var(--ink)" strokeWidth="20" strokeLinecap="round" />
+
+          <ellipse cx="80" cy="83" rx="17" ry="12" fill="#E7B896" />
+          <path d="M66 80 q14 -10 28 0" fill="none" stroke="#C99873" strokeWidth="2.5" strokeLinecap="round" />
+        </svg>
         <h1>Money Ledger</h1>
         <div className="sub">{isSignup ? "Create your account" : "Log in"}</div>
 
